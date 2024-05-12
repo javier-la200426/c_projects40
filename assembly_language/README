@@ -1,0 +1,81 @@
+Authors:
+    Prince Millidah - pmilli03
+    Javier Laveaga - jlavea01
+
+Acknowledgements:
+    no collaboration with anyone besides us took place. We did get help from 
+    the Ta's' at office hours
+
+
+Implementation:
+    We sucessfully implemented everything that was specified in the spec to our
+    knowledge. This includes all the operations required as well as printing.
+
+
+Departures from recommended calling conventions: 
+
+    When asking for input we saved the result r3 instead of r1. 
+
+    When a procedure returns a result, we do not always save 
+    the result in register 1. This is because of convenience and avoiding
+    overusing push/pop to save values of registers when returning from 
+    a call to a procedure.
+
+    For example, in flip, the value to be returned is in r5 because 
+    the 'input' was already in r5 and it just needs to be updated. 
+    So, there was no need to switch to register r1. 
+
+    However, in the function that returns a 'boolean value', we did place the 
+    return value in r1. 0 indicates false and 1 indicates true. This makes more
+    sense as the function 'has' is used a lot and it makes more sense to 
+    expect the return value to always be in r1.
+
+    Register r0 is always 0 and r2 is always the stack pointer.
+
+    The non-volatile registers were r3, r5 (instead of r3, r4)
+    The volatile registers were r4, r6, r7 (instead of r5,r6,r7)
+
+    r4, r6, r7 were used as temporaries. This was because the if 
+    macro needs 3 of them. We could have used 'using' but we decided not to 
+    for convenience. 
+
+    We did not always save and restore the non-volatile registers as it 
+    was not always necessary. It would have been inefficient in some instances.
+
+    We decide to use just one stack (the value stack) for storing values and
+    calling functions. The calling function are stored as return values on the 
+    stack and are always popped off before the next operation is performed.
+
+Print Module (1 sentence):
+
+    The print module was implemented by looping over the stack, and for each 
+    value, we pushed each digit from right to left on the stack and then popped
+    each one and printed them (also with a loop).
+
+RPN Calculator Value Stack:
+
+    To represent the RPN calculator's value stack, we allocated memory for 
+    100,000 words and saved a pointer to the last word (endstack). (We only
+    have 1 stack for both storing values and calling functions)
+
+
+Sections:
+
+    init:
+        Contains setup code, including code to initialize the register r2 to 
+        point to the end of stack, setting r0 to 0, code to initialize 
+        the jump table, and code to call main when setup in complete
+        
+    data:
+        Contains a preallocated call/value stack with 100,000 words
+
+    text:
+        Contains procedure definitions including the definition of main and
+        the print function
+
+
+Time Spent analyzing the assignment: 1 hour
+
+Time Spent writing assembly code: 10 hours
+
+Time Spent debugging the calculator: 10 hours
