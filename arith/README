@@ -1,0 +1,60 @@
+Authors:
+Prince Millidah - pmilli03
+Javier Laveaga - jlavea01
+
+Acknowledgements:
+no collaboration with anyone besides us took place. We did get help from the 
+Ta's' at office hours
+
+
+Implementation:
+We sucessfully implemented everything that was specified in the spec to our 
+knowledge. This includes the compressor, decompressor, bit pack interface,
+and also ppmdiff. We are relatively sure we have caught all edge cases.
+
+Architecture:
+Compression
+ Our compression architecture was such that the input file in read into blocks
+ of size of 2 with necessary trimming being done. Afterwards, the RGB values are
+ converted to component video and then to the Pr, Pb, a, b, c, d. The packed 
+ words are stored in UArrays and then printed out. Our inplementation makes 
+ use of the following data structure.
+  - UArray2b for storing the image (Implementation in UARray2b.c)
+  - Sequence for storing our P and abcd values (From Hanson)
+  - UArray for storing our packed words (From Hanson)
+  - Struct defined in our program_struct.h to perform specific function
+ Our implementation can be located in the compressor.c file. This fiel makes 
+ of bitpack.c for packing the codeword.
+
+
+Decompression:
+ Our decompressor starts by reading in the file with the coded words. It 
+ stores all of these words into an 1D UArray_T (using bitpack interface
+ and getc). It then unpacks the a,b,c,d, Pb_avg, Pr_avg values. It puts
+ these values into a P_avg_abcd struct and at the end returns a sequence 
+ with these structs. It takes this sequence of P_avg_abcd structs and creates
+ a blocked array with a blocksize of 2 with the Pb, Pr, and Y floats for each 
+ pixel. These values are then stored as a A2Methods_UArray2 of 
+ P_and_Y_floats structs. This is really a blocked array of blocksize 2. It 
+ then maps through that array and coverts it to another A2Methods_UArray2 of 
+ Pnm_rgb struct with int values. It finally iterates through that blocked 
+ array and prints the ppm file to stdout. 
+
+Bitpack interface:
+ Our interface defines function for shifting. These are then used in the 
+ rest of the functions. Some get a specefic value from a 32-bit word, 
+ write a value to a word, or determinae if a value can be represented 
+ using a specific number of bits (width).
+
+ The Bitpack interface is used in our compressor for packing the a,b,c,d,
+ Pb_avg, Pr_avg into a 32-bit word. It is also used for printing 8 bits 
+ at a time when using putchar.
+ 
+ The Bitpack interface is used in the decompressor when unpacking the word
+ and getting the Pb_avg, Pr_avg, and a,b,c,d usigned and signed ints.
+
+ 
+ 
+Time Spent analyzing the problem: 20 hours
+
+Time Spent solving the problem after the analysis: 30 hours
