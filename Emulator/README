@@ -1,0 +1,205 @@
+//////////////////////////////////////////////////////////////////////////////
+                                    NAMES
+//////////////////////////////////////////////////////////////////////////////
+ 
+ Eva Caro (ecaro01) and Javier Laveaga (jlavea01)
+ HW 6: UM
+ Comp 40 Spring 2024
+
+//////////////////////////////////////////////////////////////////////////////
+                                ACKNOWLEDGMENTS
+//////////////////////////////////////////////////////////////////////////////
+ 
+ Thank you to the TAs at Office Hours and on Piazza!
+ 
+//////////////////////////////////////////////////////////////////////////////
+                                ARCHITECTURE
+//////////////////////////////////////////////////////////////////////////////
+ 
+ Our Universal Machine is a struct declared in a file called um.h. This struct
+ consists of:
+    - Segments: A Seq_T of Seq_T's 
+          - Each segment is represented by a Seq_T of uint32_t's, and all of 
+            the segments will be stored within this one large Seq_T
+    - Counter: A long int denoting the program counter
+          - The program counter is equivalent to the offset of a segment that 
+            the UM is currently reading from. It begins at 0 and is updated
+            throughout the entirety of the program when an instruction word is 
+            fetched.  
+    - Unmapped: 
+          - A Seq_T of ints, where each int is the segment id of an 
+            unmapped segment
+    - Reg: 
+          - An array of size 8 holding uint32_t's, where each position in the
+            array corresponds to a register (reg[0] = register 0).
+
+ um_helper.h contains the interface for the Universal Machine. The client has 
+ access to only four functions: UM_new(), read_file(), run(), and UM_free.
+ All other functions necessary to fetch, decode, and execute instructions are
+ called within run() and declared in um_helper.c for better secret keeping.
+ Here is a brief description of each of the client-usable functions that live 
+ within um_helper:
+    - UM_new(): returns a new, empty UM with registers and counter initialized
+      to 0.
+    - read_file(): takes a UM, a file pointer (to read instructions from), and
+      the number of bytes contained in the file. A new Hanson sequence is
+      created (with size = number of instructions in the file), and 
+      byte-by-byte, instruction words are read from the file and stored in
+      this sequence, which becomes segment[0]. The UM is returned.
+    - run(): takes a UM and does a continuous loop of fetching an instruction,
+      decoding it, and executing it, for every instruction in segment 0 or 
+      until the HALT instruciton is encountered.
+    - UM_free(): takes a UM and frees all of its associated memory.
+
+ The client creates a UM, uses read_file to feed it instruction words, and 
+ calls run on the UM. The UM reads in the word pointed to by the program
+ counter, uses the Bitpack interface to decode it, and stores its information
+ (A, B, C values or A and load value) in an array of integers. The OP code
+ (which denotes the instruction type) is used in a switch statement, and 
+ we have a singular, separate function to handle each of the instructions.
+ Each of these instruction functions takes just the UM and the information
+ array, making whatever changes are necessary to the UM. This process continues
+ until the program counter points to the end of segment[0] or the HALT
+ instruction is executed.
+
+
+//////////////////////////////////////////////////////////////////////////////
+                                  TESTING
+//////////////////////////////////////////////////////////////////////////////
+ Most of our tests had no expected output. The way we verified whether our
+ UM was behaving appropriately when faced with these tests was by printing
+ the state of the UM before and after each instruction was fetched, decoded,
+ and executed (printing all the registers, segments, and all the words in each 
+ segment).
+ 
+ We also wrote a shell script which automatically diffed the actual output 
+ with the expected output as well as diffing against the output of the 
+ reference. 
+
+ Below is a brief description of each of our unit tests:
+
+    - add.um: 
+       Ensures that add() correctly sums two values and amends the registers
+       as desired by putting 48 and 47 in two registers and storing their sum
+       in register 3. All three registers' values were printed using output.
+    - cond0.um: 
+       Tests cmov() when register C holds a value == 0, checking that the 
+       value in register B (101) doesn't get stored in register A (which is 
+       0).
+    - condNOT0.um:
+       Tests cmov() when register C holds a value != 0, checking that the 
+       value in register B (101) gets stored in register A (which used to 
+       hold 113).
+    - div.um:
+       Tests division with 6 and 5, which does not evaluat to a whole number.
+       Should round down and evaluate to 1. This function was also used to
+       test numbers that do evaluate to round numbers, and numbers that should
+       have a result of 0 by replacing the numbers we loaded onto the reg's.
+    - halt.um:
+       Tests the halt instruction by creating a file with this instruction 
+       by itself. 
+    - halt-verbose.um:
+       Tests the halt instruction by inserting a series of instructions first, 
+       and then inserting a halt in the middle. Instructions are inserted after
+       to see if halt correctly stops execution.
+    - input_output.um:
+       Tests to see if the correct values is output by taking an input from 
+       the user. This input is expected to be F (one character). 
+    - input.um:
+       Tests to see whether the input you give is correctly being printed out
+       by calling the input and output instructions.
+    - load_program.um:
+       Creates a new segment and then adds known values to it. Then, it calls 
+       the load_program function to duplicate this segment and make it the 0th 
+       segment. The new segment does not have halt instruction at the end, so 
+       it tests to see if it properly fails, which is does not since line is
+       commented out. 
+    - load_val.um:
+       Loads a value between 0 and 255 into each of the registers, then prints
+       them all out using output(). We used this to test loadval().
+    - mapseg.um:
+       We used this to test our map segment function. We printed the state of 
+       the UM before and after executing each of the commands (there are 3)
+       ensuring that after the the new segment) and there were two segments in
+       the segments sequence.
+    - multiply.um:
+       Loads the numbers 5 and 6 into regsiters 1 and 2 respectively, then
+       multiplies them using the mult() function and stores the result in 
+       register 3. We printed the contents of the registers before and after 
+       each command to verify that they contained the correct values.
+    - nand.um:
+       We used the multiplication and adding functions to store the largest 
+       value that can be encoded in 32 bits in register 3 (since loadval can't
+       load more than 25 bits in a register). We stored this 10 less than this
+       value in register 7, nanded them together and put the result in register
+       5, which should rhold a value of 10. We veriified this by printing the 
+       contents of the registers.
+    - output.um:
+       Tests that our output function works appropriately. We loaded 81 into a
+       register, outputted it and made sure our output was a "Q". We also tried
+       this test with other values (those of non-printable characters) and 
+       made sure our UM behaved similarly to the reference (printed nothing), 
+       and that the register held the value.
+    - seg_load2.um:
+       This tests calls load value multiple times to add instructions to 
+       segment 0. It then calls seg_load to see if the 5th instruction
+       is correclty stored in r2.
+    - seg_store.um:
+       Maps a new segment and loads a known value, 65, corresponding to A, into
+       a specified offset in the segment. Seg load is called at that same 
+       position to see if the 65 was correctly stored. The A is then printed.
+    - segstore2.um:
+       Creates 6 segment of size 2 each. Then it stores the value of 69, which 
+       corresponds to the letter E, into the 5th segment with an offset of 
+       2. Finally, seg load is called to take that value E and print it out to 
+       see if seg store and load work properly.
+    - small_nand.um:
+       The small_nand tests takes the value of 66 which is equivalent to B.
+       Then, it performs nand operations to until it gets back to 66. It 
+       outputs B to see the result.
+    - unmapseg.um:
+       Maps a segment with unknown values and then unmaps it to see if any 
+       errors occur by just calling these two functions.
+    - unmapseg2.um:
+       Maps a new segment with known values and umaps that segment. This tests
+       whether the mapping and unmapping work well together.   
+    - time.um:
+       Used to see how long it takes the UM to execute 50,000,000 instructions,
+       Mapping two new segments, doing a segmented store, and unmapping the 
+       segments a total of 100,000 times (500,000 total instructions). We 
+       timed this, then multiplied the resulting time by 100 to know how long
+       it would take to execute 50 million instructions. (We also ran this test
+       with 50,000,000 instructions and got a total of 14 seconds, but we could
+       not submit that test file as it was too large).
+
+
+//////////////////////////////////////////////////////////////////////////////
+                         CORRECTLY IMPLEMENTED
+//////////////////////////////////////////////////////////////////////////////
+
+Incorrectly Implemented: We believe everything was correctly implemented to
+the best of our understanding.
+
+//////////////////////////////////////////////////////////////////////////////
+                         DEPARTURES FROM DESIGN
+//////////////////////////////////////////////////////////////////////////////
+ 
+ No significant departures
+
+//////////////////////////////////////////////////////////////////////////////
+                        Time it takes to run 500 million instructions
+//////////////////////////////////////////////////////////////////////////////
+ 
+ A unit test was create d, called time.um which contained a for loop that 
+ ran 10,000,000 times. Within the for loop, 5 instructions were placed.
+ Thus, the time.um has 50 million instructions + 3 (including the first two 
+ loadvals and halt). This took 14 seconds. 
+
+
+//////////////////////////////////////////////////////////////////////////////
+                                TIME SPENT
+//////////////////////////////////////////////////////////////////////////////
+ 
+ Hours spent analyzing the assignment: 3
+ Hours spent preparing the design: 6
+ Hours spent solving the problems after our analysis: 20
