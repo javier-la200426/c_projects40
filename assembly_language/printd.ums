@@ -1,0 +1,92 @@
+############################## printd.ums #####################################
+# Authors: Javier Laveaga (jlavea01) and Prince Millidah (pmilli03)
+# Date: 4/28/24
+# Assigment: asmcoding
+# Summary: This file contains the function for printing Universal Machine
+# words in decimal. It iterates over the stack and prints the numbers
+# in its decimal frepresentation, including negative numbers. It is called
+# whenever the newline character is inputted.
+#############################################################################
+
+
+.section text
+.temps r6, r7, r4
+# Starts the definition of the print function, initializing the pointer to 
+# the stack and the number to be printed, and then goes to the start_print
+print_stack:
+    
+    r1 := r2 + 1 #initialize pointer to the stack (r2 is the stack pointer)
+
+    # Check if r1 is pointing to the end of the stack, if so, go to waiting
+    # label, otherwise, go to start_print where the current number is stored 
+    # in r3 and goes to single_val to print it
+    start_print: 
+        if (r1 == endstack) goto leave_print    #leave if endstack is reached
+        r3 := r1 - 1                            #point to number to be printed
+        r3 := m[r0][r3] #get number
+        output ">>> "
+        push r1 on stack r2  #save whatever you are using r1 for (r1 is pointer)
+        goto single_val linking r1 #print 1 value in the stack
+        pop r1 off stack r2 #restore r1 pointer to what it was
+        r1 := r1 + 1   #going closer to end_stack (to the right)
+        goto start_print 
+
+    # Leaves the print procedure and goes back to waiting for input
+    leave_print:
+        goto waiting
+
+    # Prints the value in r3 in decimal representation. It first checks if the
+    # value is the most negative number, if so, it prints it and exits. If the
+    # value is negative, it prints the negative sign and changes the value to
+    # its 2's complement. It then iterates through the value, getting the last
+    # digit and printing it, until there is only one digit left. It then prints
+    # the last digit and exits the procedure. r1 is used as a comparator. 
+    single_val:
+        push r1 on stack r2 #save return address
+        r1 := 2147483648  #save most negative number
+        if (r3 == r1) goto most_negative #if most negative number, print it
+        r1 := 0  #initialize counter that counts number of digits in value
+        if (r3 <s r1) goto print_sign #if negative, print negative sign
+    
+    # Iterates through the value in r3, getting the last digit and printing it
+    # until there is only one digit left. It then prints the last digit and
+    # exits the procedure. r5 is used to store the last digit of the value.
+    enter_loop:
+        r5 := r3 mod 10  #getting last digit of the value
+        r3 := r3 / 10   #update r3 to be what it was but without last digit
+        r1 := r1 + 1   #inrease counter by 1
+        r5 := r5 + '0'  #converting the digit to its ASCII representation
+        push r5 on stack r2 #adding last digit of value to stack
+        if (r3 == 0) goto print_less_ten  #digit to be printed is less than ten 
+        goto enter_loop
+        
+    # Prints the last digit of the value in r3 and exits the procedure. r3 is
+    # used to store the last digit of the value. r1 is used as a counter to
+    # track the number of digit that have been printed to restore the stack
+    # pointer to its original nature.
+    print_less_ten:
+        pop r3 off stack r2 #pops number to be printed off stack 
+        output r3 #print value (already in the ASCII representation)
+        r1 := r1 - 1 #decrease counter indicating that 1 digit has been printed
+        if (r1 == 0) goto exit_print_val #exit if no more digits to print
+        goto print_less_ten
+
+    # Outputs a newline character and goes back to the return address
+    # stored in r1.
+    exit_print_val:
+        output '\n'
+        pop r1 off stack r2 #popping return address 
+        goto r1 #going to one line after single_val was called in start_print
+
+    #outputs the most negative number and exits the print procedure for 1 value
+    most_negative:
+        output "-2147483648"
+        goto exit_print_val
+
+    #outputs a negative sign and changes number in r3 to a its 2's complement
+    #goes back to enter_loop to begin outputting the digits in the value
+    print_sign:
+        output "-"
+        r3 := ~r3 
+        r3 := r3 + 1
+        goto enter_loop

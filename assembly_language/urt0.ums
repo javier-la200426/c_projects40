@@ -1,0 +1,19 @@
+############################## urt0.ums ####################################
+# Authors: Javier Laveaga (jlavea01) and Prince Millidah (pmilli03)
+# Date: 4/28/24
+# Assigment: asmcoding
+# Summary: This file allocates space for the stack and establishes r0 to hold
+# 0.
+#############################################################################
+
+# Initializing r0 to 0 and making r6 and r7 temporary registers
+.section init
+.temps r6,r7
+      .zero  r0
+
+# Space for the stack is allocated below.
+# Allocate space (100,000 words) for call stack
+# Label endstack is address of first word *after* the call stack
+      .section data
+      .space 100000
+endstack: 

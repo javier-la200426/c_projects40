@@ -1,0 +1,24 @@
+############################## callmain.ums ###################################
+# Authors: Javier Laveaga (jlavea01) and Prince Millidah (pmilli03)
+# Date: 4/28/24
+# Assigment: asmcoding
+# Summary: This file initializes the stack pointer to r2, initializes
+# r0 to 0, and calls main()
+#############################################################################
+
+# _ustart is the entry point of the program and initalize r6 and r7 as temp 
+# registers
+.section init
+.temps r6,r7 
+
+
+# _ustart initializes the stack pointer to r2 and calls main()
+# using the regular calling conventions, linking the return address in r1.
+# halts after main returns.
+_ustart:
+      r0 := 0  # place 0 in r0
+      r2 := endstack # initialize r2 to point to the end of the stack
+
+      goto main linking r1 #calling main
+      halt
+   

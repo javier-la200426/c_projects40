@@ -1,0 +1,455 @@
+############################## calc40.ums #####################################
+# Authors: Javier Laveaga (jlavea01) and Prince Millidah (pmilli03)
+# Date: 4/28/24
+# Assigment: asmcoding
+# Summary: This file contains calculator - related functions. It contains
+# the initialization of the jumptable as well as definitions of the 
+# functions corresponding to the calculator commands. It asks for input
+# and switches between the waiting and entering stages. 
+#############################################################################
+
+# initializing r4, r6, r7 as temp registers
+.temps r6, r7, r4
+.section text
+
+
+# Push r1 on the stack, where r1 is the return address from callmain file
+main:
+    push r1 on stack r2  # saving return address on the stack
+
+
+# Take in input byte by byte into r3 and check the jumptable to 
+# execute the correct command. Will end programm if r3 == -1 (EOF)
+waiting:
+    r3 := input() # get input
+
+    if (r3 != -1) goto go_table  # if not end of file, go to jumptable
+    goto end_file # if end of file, go to end_file
+
+
+# Entering state called when a digit is seen while waiting
+#  Check if r3 (input) is a digit, if so, add it to the digit. If not 
+#  got to corresponding function based on input, exiting entering stat
+entering:
+    r3 := input()   # get input
+    if (r3 == -1) goto end_file # if end of file, go to end_file
+
+    r5 := jumptable + r3  # get address of jumptable slot
+    r5 := m[r0][r5]        # get value of jumptable slot
+    if (r5 != digit) goto non_digit  # if not a digit, go to non_digit
+
+
+    # pop the value off stack onto r1, multiply it by ten, and then add 
+    # r3(input) to r1. Push final value on the stack
+    add_to_digit:
+        pop r1 off stack r2     # get current digit on stack
+        r1 := r1 * 10          
+        r3 := r3 - '0'
+        r1 := r1 + r3           # add digit to digit that was on stack
+        push r1 on stack r2     # save new digit
+        goto entering
+
+  
+    # Goes to the non-digit function that is associated with the input
+    non_digit:
+        goto r5   # go to waiting state
+
+
+# Clears the stack and goes back to return address of call_main
+end_file:
+    r1 := r2    # initialize r1 to point to the top of the stack
+
+    
+    # Clear the stack using recursion by storing current stack memory in r1
+    # and value on top of the stack in r3
+    start_clear:
+        if (r1 == endstack) goto end_clear # Ending clear if stack empty
+        pop r3 off stack r2  # pop value off stack
+        r1 := r1 + 1        # move pointer to next value
+        goto start_clear
+
+    # go to r3 which holds return address. This means program will halt
+    end_clear:
+        goto r3   
+
+
+# Go to the jumptable to execute the correct command by offsetting by r3(input)
+go_table:
+    r5 := jumptable + r3  # get address of jumptable slot
+    r5 := m[r0][r5]       # get value of jumptable slot
+    goto r5                # go to the command
+    
+############################################################################
+#                   section init
+# Purpose: Initialize the jumptable with the correct labels
+############################################################################
+.section init
+    jumptable:    # jumptable to execute the correct command
+    .space 256      # space for 256 slots in jumptable
+    
+    r1 := 0     # initialize counter for jumptable
+    
+
+    # Set the memory slot in the jumptable to input_error by storing the curent
+    # memory slot of the jumptable in r5 and using r1 as a counter for 256 
+    # iteration
+    set_input_error:
+        r5 := jumptable + r1        # get address of jumptable slot
+        m[r0][r5] := input_error    # set jumptable slot to input_error
+        r1 := r1 + 1                # increment counter
+        if (r1 <s 256) goto set_input_error # loop until all slots are set
+
+    r3 := 48   # setting r3 to the ASCII value of 0
+    
+    #  Set slots 48 t0 57, the digits, in the jumptable to point to the
+    #  digit label using r5 to save curent jumptable memory slots and r3 as 
+    #  ascii coespondent for each digit
+    set_digit:
+        r5 := jumptable + r3        # get address of jumptable slot
+        m[r0][r5] := digit          # set jumptable slot to digit
+        r3 := r3 + 1                # increment r3
+        if (r3 <s 58) goto set_digit        # loop until all slots are set
+        
+
+
+# Initialize the rest of the jumptable to point to the right labels
+initialize_others:
+
+    #intializing space for jumptable
+    r3 := 32
+    r5 := jumptable + r3
+    m[r0][r5] := waiting
+
+    #initializing new line to point to print_stack
+    m[r0][jumptable + '\n'] := print_stack
+    #initialize addition
+    m[r0][jumptable + '+'] := add
+    #initialize substract
+    m[r0][jumptable + '-'] := substract
+    #initialize multiply
+    m[r0][jumptable + '*'] := multiply
+    #initialize divide
+    m[r0][jumptable + '/'] := divide
+    #initialize bitwise_or
+    m[r0][jumptable + '|'] := bitwise_or
+    #initialize bitwise_and
+    m[r0][jumptable + '&'] := bitwise_and
+    #initialize change_sign
+    m[r0][jumptable + 'c'] := change_sign
+    #initialize bit_complement
+    m[r0][jumptable + '~'] := bit_complement
+    #initialize swap
+    m[r0][jumptable + 's'] := swap
+    #initialize duplicate
+    m[r0][jumptable + 'd'] := duplicate
+    #initialize pop_val
+    m[r0][jumptable + 'p'] := pop_val
+    #initialize zero_stack
+    m[r0][jumptable + 'z'] := zero_stack
+
+
+############################################################################
+#                   section text
+# Purpose: Define the labels for the commands
+############################################################################
+.section text
+
+
+# r3 is the input and it pushes inputed digit to the stack 
+digit:
+    r1 := r3 - '0'          # convert ASCII to integer
+    push r1 on stack r2     # push digit to stack
+    goto entering           # go back to entering state
+
+# Output error message for unknown character inputted in r3
+input_error:
+    output "Unknown character '"        # output error message
+    output r3                           # output unknown character
+    output "'"                          # output closing quote
+    output '\n'                         # output newline
+    goto waiting                        # go back to waiting state
+
+
+# Checks if there is enough values on the stack for addition, pop two values on
+# stack into r1 and r5, sums the values into r1 and add r1 to stack
+add:
+    r1 := 2                 # set r1 to 2 to check if there are enough elements
+    push r1 on stack r2     # push r1 to stack
+    goto has linking r1     # go to has to check if there are enough elements
+   
+    pop r5 off stack r2     # pop second number
+    pop r1 off stack r2     # pop first number
+    r1 := r1 + r5           # add the two numbers
+    push r1 on stack r2     # push the result to the stack
+    goto waiting            # go back to waiting state
+
+
+# Checks if there is enough values on the stack for subtraction, pop two values
+# on stack into r1 and r5, subtract the values and put in r1 and add r1 to 
+# the stack
+substract:
+    r1 := 2                 # set r1 to 2 to check if there are enough elements
+    push r1 on stack r2     # push r1 to stack
+    goto has linking r1     # go to has to check if there are enough elements
+   
+    pop r5 off stack r2     # pop second number
+    pop r1 off stack r2     # pop first number
+    r1 := r1 - r5           # subtact the two numbers
+    push r1 on stack r2     # push the result to the stack
+    goto waiting            # go back to waiting state
+
+# Checks if there is enough values on the stack for multiplication, pop two 
+# values on stack into r1 and r5,multiply the values into r1 and add r1 
+# to stack
+multiply:
+    r1 := 2                 # set r1 to 2 to check if there are enough elements
+    push r1 on stack r2     # push r1 to stack
+    goto has linking r1     # go to has to check if there are enough elements
+   
+    pop r5 off stack r2     # pop second number
+    pop r1 off stack r2     # pop first number
+    r1 := r1 * r5           # multiply the two numbers
+    push r1 on stack r2     # push the result to the stack
+    goto waiting            # go back to waiting state
+
+# Divide the second number of the stack by the first. Push the result
+# on the stack. Will print error if there are not at least 2 values on stack
+divide:
+    #checking with has if possible
+    r1 := 2
+    push r1 on stack r2  #push 1st parameter for has
+    goto has linking r1
+
+    #initiating division
+    pop r5 off stack r2
+    if (r5 == r0) goto division_by_zero #if denominator is 0, print error
+    r1 := 0 #initialize counter
+    push r1 on stack r2 #push counter on stack
+    goto check_value linking r1
+    r1 := r5                    #first value (positive value)
+    pop r5 off stack r2         #Getting next value
+    push r1 on stack r2         #push first value (positive)
+    push r3 on stack r2         #push counter (incremented)
+    goto check_value linking r1
+
+    pop r1 off stack r2
+    r5 := r5 / r1 #doing division of 2 positive numbers
+    r1 := 1
+    if (r3 == r1) goto negative_value #if only 1 negative value
+    push r5 on stack r2 #push positive positive number
+    goto waiting
+
+# Check if the vlaues in r5 is negative, pop off the counter off the stack into
+# r3, puts the largest negative number in r1 and calls flip if r5 is negative
+check_value:
+    pop r3 off stack r2  #get counter
+    push r1 on stack r2 #push return address
+    r1 := 2147483648 #for comparison
+
+    if (r5 == r1) goto flip
+    if (r5 <s r0) goto flip
+    pop r1 off stack r2
+    goto r1
+    
+    
+# flip the negative number in r5 to a positive number by doing the 2's 
+# complement, increment the counter in r3, and push it on the stack
+flip:
+    r3 := r3 + 1            # increasing the counter
+    r5 := ~r5               # Notting the value in r5
+    r5 := r5 + 1            # Getting the positive form of the initial r5 
+    pop r1 off stack r2     # Getting return address to divide
+    goto r1
+
+# make the result of division stored in r5 negative and pushs it onto the stack
+negative_value:
+    r5 := r5 * -1 #make result negative
+    push r5 on stack r2
+    goto waiting
+
+# Print out error when the denominator (r5) is 0 when dividing, pushes r5 on
+# the stack and goes to waiting
+division_by_zero:
+    output "Division by zero\n"
+    push r5 on stack r2
+    goto waiting
+
+# Checks if there is enough values on the stack for bitwise or, pop two off 
+# the stack into r1 and r5, or the values into r1 and add r1 to stack
+bitwise_or:
+    #checking with has if possible
+    r1 := 2
+    push r1 on stack r2  #push 1st parameter for has
+    goto has linking r1
+
+    #initiating bitwise_or
+    pop r5 off stack r2
+    pop r1 off stack r2
+    r1 := r1 | r5
+    push r1 on stack r2
+    goto waiting
+
+    
+# Checks if there is enough values on the stack for bitwise and, pop two off 
+# the stack into r1 and r5, and the values into r1 and add r1 to stack
+bitwise_and:
+    #checking with has if possible
+    r1 := 2
+    push r1 on stack r2  # push 1st parameter for has
+    goto has linking r1
+
+    #initiating bitwise and
+    pop r5 off stack r2
+    pop r1 off stack r2
+    r1 := r1 & r5
+    push r1 on stack r2
+    goto waiting
+
+# Checks if there is enough values on the stack for change, pops a values off
+# the stack into r5, change its sign and push it onto the stack. 
+change_sign:
+    #checking with has if possible
+    r1 := 1
+    push r1 on stack r2  #push 1st parameter for has
+    goto has linking r1
+
+    #initiating change_sign
+    pop r5 off stack r2
+    r5 := r5 * -1
+    push r5 on stack r2
+    goto waiting
+
+# Pops topmost value off the stack in r5 and performs bitwise complement. 
+# Pushes result r5 on stack. Will print error if there is not at least 1 value 
+# on the stack.
+bit_complement:
+    #checking with has if possible
+    r1 := 1
+    push r1 on stack r2  #push 1st parameter for has
+    goto has linking r1
+
+    #initiating bit_complement
+    pop r5 off stack r2
+    r5 := ~r5
+    push r5 on stack r2
+    goto waiting
+
+# Swap the top two elements of the stack by popping off into 
+# r1 and r5. Pushes them in the reverse order. Goes to waiting after. Will 
+# print error if there are not at least 2 values on stack.
+swap:
+    #checking with has if possible
+    r1 := 2
+    push r1 on stack r2  #push 1st parameter for has
+    goto has linking r1
+
+    #initiating swap
+    pop r5 off stack r2
+    pop r1 off stack r2
+    push r5 on stack r2
+    push r1 on stack r2
+    goto waiting
+
+# Duplicates the value on the top of the stack. Pops value to be duplicated 
+# on r5 and pushes it twice on the stack. Will output an error if there
+# is not at least one value on the stack.
+duplicate:
+    #checking with has if possible
+    r1 := 1
+    push r1 on stack r2  #push 1st parameter for has
+    goto has linking r1
+
+    #initiating duplicate
+    pop r5 off stack r2
+    push r5 on stack r2
+    push r5 on stack r2
+    goto waiting
+
+#pops value off top of stack into r5 and goes back to waiting. output an error
+# message if there is not at least one value on the stack
+pop_val:
+    #checking with has if possible
+    r1 := 1
+    push r1 on stack r2  #push 1st parameter for has
+    goto has linking r1
+
+    #initiating pop_val
+    pop r5 off stack r2
+    goto waiting
+
+# Clears the stack by popping off each element until the end of the stack is
+# reached. Goes back to the return address of call_main. r1 is used to point to
+# the top of the stack. r3 used to store the current element being popped off 
+zero_stack:
+    r1 := r2 #point to uppermost element
+
+    # Clear the stack using recursion by storing current stack memory in r1
+    # and value on top of the stack in r3
+    start_stack:
+        #check to see if you are at endstack
+        if (r1 == endstack) goto restore_end
+        pop r3 off stack r2  #pop and save in r3
+        r1 := r1 + 1   #going closer to end_stack (to the right)
+        goto start_stack
+
+    # Pushes the return address in r3 back on stack and goes back to waiting
+    restore_end:
+        push r3 on stack r2 #putting return address of call_main back 
+        goto waiting
+
+    # Assumes that the argument k is at top of stack. 
+    # This function checks to see if there are at least k elements on the stack
+    # If there are, it goes back to the return address. 
+    # if not, it outputs an error message indicating how many elements are 
+    # needed and goes to waiting
+    has:
+        pop r5 off stack r2 #get 1st argument (in r5)
+        push r1 on stack r2 #save the return address
+
+        #r5 (argument) is how many elements you should have on stack
+        r3 := 0  #counter initialized to 0. 
+        r1 := r2 + 2 #initialize pointer to point to 2 more deep that r2
+        # +2 and not +1 because stack now has return address in addition to 
+        # the call_main return address
+        
+        # Iterates through the stack until the number of elements on the stack
+        # is equal to the number of elements needed . r1 is the pointer to the 
+        # stack and r5 is the number of elements needed and r3 is the counter
+        # Goes to true_case if the number of elements on the stack is equal to
+        # the number of elements needed else goes to false_case
+        start_has:
+            # if r5 (the number of elements you should have on stack) is
+            # equal to how many digits you have counted (counter r3), it's true
+            if (r3 == r5) goto true_case #if count == r5 then true
+            if (r1 == endstack) goto false_case #if we ever reach end, false
+            r3 := r3 + 1 #update count
+            r1 := r1 + 1 #update pointer
+            goto start_has
+
+        # Outputs an error message indicating how many elements are needed
+        # and goes back to waiting. r5 is the number of elements needed and 
+        # r1 is set to 0 to represent false
+        false_case: 
+            r1 := 0 # make return value false
+            output "Stack underflow---expected at least "
+            r5 := r5 + '0'
+            output r5  # number of elements 
+            r5 := r5 - '0'
+            output " element"
+            
+            if (r5 == 1) goto skip_plural #if 1 element needed, don't add "s"
+                output "s"
+
+        # Outputs a new line and pops off the return address in r5 and goes
+        # to waiting 
+        skip_plural:
+            output "\n"
+            pop r5 off stack r2 #discard the return address 
+            goto waiting
+
+        # pops off the return address in r5 and goes back to the return address
+        # r1 is set to 1 to represent true
+        true_case:
+            r1 := 1 #make return value true
+            pop r5 off stack r2 #get return address
+            goto r5
