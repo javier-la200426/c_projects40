@@ -1,0 +1,43 @@
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *                          README
+ * 
+ * Assignment: FilesOfPix
+ * Authors: Javier Laveaga (jlavea01) and Prince Millidah {pmilli03}
+ * Date: January 31, 2024
+ * 
+ * Summary: This file is used to describe the purpose of the
+ *          program, how to compile it, and how to run it. This file 
+ *          is also used to describe the overview architecture of the 
+ *          program, and the design of the program.
+ * 
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+
+ 
+ Acknowledgements:
+    We went to office hours to present our design to the TA's and get feedback
+    from it even though they did not provide much information. They just 
+    asked us guiding questions. 
+    
+    We also went to office hours for a pointer 
+    issue we were having when passing a pointer to a function. 
+    
+    Went again to office hours when we got a black diagonal line going through 
+    our images being displayed. 
+
+    We will also like to acknowledge the use 
+    of the Hanson implementation textbook as a reference for this assignment.
+
+ Correctly Implemented:
+    We correctly implemented readaline.
+    We correctly displayed the pgm image by printing out the the correct 
+    P5 format.
+    We also accounted for files that have greater than 1000 characters 
+ Time spent: 
+    45 hours 
+
+
+
+
+ 
+ 
+
