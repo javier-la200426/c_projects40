@@ -1,0 +1,57 @@
+//////////////////////////////////////////////////////////////////////////////
+                                    NAMES
+//////////////////////////////////////////////////////////////////////////////
+ 
+ Eva Caro (ecaro01) and Javier Laveaga (jlavea01)
+ HW 7: Profiling
+ Comp 40 Spring 2024
+
+//////////////////////////////////////////////////////////////////////////////
+                                ACKNOWLEDGMENTS
+//////////////////////////////////////////////////////////////////////////////
+ 
+ Thank you to the TAs at Office Hours and on Piazza!
+
+//////////////////////////////////////////////////////////////////////////////
+                                Assembly Code
+//////////////////////////////////////////////////////////////////////////////
+
+We used the "Self" tab on the results of running qcachegrind to identify
+the program hotspots.
+
+The most time-consuming hotspot is in the fetch function which is responsible 
+for returning the next instruction word (the one whose index in segment 0 
+corresponds to the UM's counter variable) and updating the counter.
+
+When accessing members of the struct, it is doing an offset into the struct
+and saving members into registers. For example, when saving a word from 
+segment 0 it places it into edx which is later moved to the return register.  
+When updating counter it simply adds one to the register rax and updates the
+counter variable in the struct by simply moving that value in the register.
+This means that it is appropriately saving the frequently used variables 
+into registers. 
+
+In terms of executing instructions on the UM, the one that takes the most 
+time is segment_store function which is responsible for 
+storing a value inside of a segment. This function is called repeatedly by the 
+execute function which is called inside the while loop of run. This most 
+likely means tha the instruction that takes is called more often and 
+consequently takes the most time and is segment store. Qcachgrind also indicates
+that this is the function that is called the most (16,200,748 times). There
+is not an obvious way of improving the assembly code. Registers are used 
+to store the arguments given to segment store as well as to store local 
+variable like length of a segment. The only time there are memory accesses is
+when accessing an element within a segment, which cannot easily be improved for
+efficiency.
+ 
+
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+                                TIME SPENT
+//////////////////////////////////////////////////////////////////////////////
+ 
+ Hours spent analyzing the problems posed in the assignment: 7 hours
+ Hours spent solving the problems after our analysis: 10 hours
