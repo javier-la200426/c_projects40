@@ -1,0 +1,300 @@
+
+Authors:
+William Magann - wmagan01
+Javier Laveaga - jlavea01
+
+Acknowledgements:
+no collaboration with anyone besides us took place. We did get help from the 
+Ta's' at office hours
+
+
+Implementation:
+We sucessfully implemented everything that was specified in the spec to our 
+knowledge. We are relatively sure we have caught all edge cases.
+
+We correclty implemented the 0, 90, 180 degrees, and -timer as well as 
+all the other ones for extra credit: transpose, 270, flip horizontal, 
+and flip vertical. 
+
+Architecture of solution:
+
+The a2methods interface provides a polymorphic interface to different 
+representations of 2D arrays. The two included for this assignemnt are 
+a a2plain.h and a2blocked.h where the former uses regular 2d arrays and the 
+latter is specific for blocked arrays. A2blocked.c and A2plain.c are method 
+suites that hold pointers to functions. These functions are implemented 
+in uarray2b.c for blocked arrays and in uarray2.c for 2d arrays.
+
+We are using the uarray2.c that is given to us. 
+All of this combines in ppmtrans.c where we update A2Methods to use the 
+correct methods and map functions. Then, we use the functions specified in the
+A2Methods interface to do our rotations and manipulations of images.
+Finally, we have the cputiming.h included in ppm trans to start and stop 
+a timer.
+
+
+Our ppmtrans.c implements transformations of images. We implemented all of
+the required roations as well as the optional roations, flips, and 
+transpositions. We decided to have one main rotate function that determines
+which transformation we want to use. For each actual transfomation we then
+call an apply function with the specified mapping major that maps through the
+image and conducts the specified transformation. ppmtrans.c utilizes the 
+polymorophism of the asMethods interface by calling indirectly on the 
+blocked or plain version of the interfaces when the user specifies as such. 
+
+For Uarray2b, we used the same interface specified in the spec. The UArray2b_T
+is represented as a UArray2b_T, where each element is a block. Each block 
+is then represented as a UArray_T or a 1D array. This means that the cells in 
+the same block will be in close by memory locations. When calling the at 
+function we are first finding the block and then the cell with the specified
+math formulas. The mapping function visits all cells in one block before 
+moving on to the next. When blocks on the bottom and right edges do not have
+used cells, the map function does not visit them. This was done with if 
+statements that look for when the current row is greater than height and if 
+current column is greater than width of cells.
+
+
+
+*Note that time (ns)per pixel = instructions per pixel because we are assuming 
+that the computer does 1,000,000,000 instruction per second or 
+1 instruction per 1 nanosecond. 
+
+Name and model of computer: Intel(R) Xeon(R) Silver 4214Y CPU @ 2.20GHz
+Clock rate: 2194.844 MHz
+
+processor   : 0
+vendor_id   : GenuineIntel
+cpu family  : 6
+model       : 85
+model name  : Intel(R) Xeon(R) Silver 4214Y CPU @ 2.20GHz
+stepping    : 7
+microcode   : 0x5000029
+cpu MHz     : 2194.844
+cache size  : 16896 KB
+physical id : 0
+siblings    : 6
+core id     : 0
+cpu cores   : 6
+apicid      : 0
+initial apicid : 0
+fpu         : yes
+fpu_exception: yes
+cpuid level : 22
+
++-----------------------+
+| rock.jpg Timer Ouputs |
++-----------------------+
+
+Assuming that there are 1,000,000,000 instructions per second
+Time in Nanoseconds per pixel = Number of instructions per pixel
+Width: 2754, Height: 3672
++--------------------------------------------------------------------------+
+| Rotation |     Block       |        row          |        column         |
+|----------+---------------------------------------------------------------|
+| 0        |    0.000116 ns  |      0.000095       |       0.000105        |
+|----------+---------------------------------------------------------------|
+| 90       |    71.25        |      80.20          |       102.811640      |
+|----------+---------------------------------------------------------------|
+| 180      |    69.771759    |      51.19          |       151.68          |
++----------+---------------------------------------------------------------+
+uarray 2 is rowwise so (mapping through in )
+Total CPU Time in nanoseconds 
+Width: 2754, Height: 3672
++--------------------------------------------------------------------------+
+| Rotation |     Block       |        row          |        column         |
+|----------+---------------------------------------------------------------|
+| 0        |    1178         |      959            |       1064            |
+|----------+---------------------------------------------------------------|
+| 90       |    720547253    |      811057983      |       1039702043      |
+|----------+---------------------------------------------------------------|
+| 180      |    705580027    |      517699175      |       1533922615      |
++----------+---------------------------------------------------------------+
+
+
+Width: 2754, Height: 3672
+Rotation: 0
+Major: row-major
+Instructions per pixel: 0.000095
+time (ns): 959.000000
+time per pixel (ns): 0.000095
+
+Width: 2754, Height: 3672
+Rotation: 0
+Major: column-major
+Instructions per pixel: 0.000105
+time (ns): 1064.000000
+time per pixel (ns): 0.000105
+
+Width: 2754, Height: 3672
+Rotation: 0
+Major: block-major
+Instructions per pixel: 0.000116
+time (ns): 1178.000000
+time per pixel (ns): 0.000116
+
+Width: 2754, Height: 3672
+Rotation: 90
+Major: row-major
+Instructions per pixel: 80.202018
+time (ns): 811057983.000000
+time per pixel (ns): 80.202018
+
+Width: 2754, Height: 3672
+Rotation: 90
+Major: column-major
+Instructions per pixel: 102.811640
+time (ns): 1039702043.000000
+time per pixel (ns): 102.811640
+
+Width: 2754, Height: 3672
+Rotation: 90
+Major: block-major
+Instructions per pixel: 71.251803
+time (ns): 720547253.000000
+time per pixel (ns): 71.251803
+
+Width: 2754, Height: 3672
+Rotation: 180
+Major: row-major
+Instructions per pixel: 51.193033
+time (ns): 517699175.000000
+time per pixel (ns): 51.193033
+
+Width: 2754, Height: 3672
+Rotation: 180
+Major: column-major
+Instructions per pixel: 151.682976
+time (ns): 1533922615.000000
+time per pixel (ns): 151.682976
+
+Width: 2754, Height: 3672
+Rotation: 180
+Major: block-major
+Instructions per pixel: 69.771759
+time (ns): 705580027.000000
+time per pixel (ns): 69.771759
+
+
++---------------------------+
+| halligan.jpg Timer Ouputs |
++---------------------------+
+
+Time in Nanoseconds per pixel
+Width: 3672, Height: 2061
++--------------------------------------------------------------------------+
+| Rotation |     Block       |        row          |        column         |
+|----------+---------------------------------------------------------------|
+| 90       |    72.302240    |      81.551258      |       79.363936       |
+|----------+---------------------------------------------------------------|
+| 180      |    69.01        |      50.97          |       130.16          |
++----------+---------------------------------------------------------------+
+
+Total CPU time in nanoseconds
+Width: 3672, Height: 2061
++--------------------------------------------------------------------------+
+| Rotation |     Block       |        row          |        column         |
+|----------+---------------------------------------------------------------|
+| 90       |    547182774    |      617179268      |     600625636         |
+|----------+---------------------------------------------------------------|
+| 180      |     522294345   |      385786770      |     985108695         |
++----------+---------------------------------------------------------------+
+
+
+Width: 3672, Height: 2061
+Rotation: 90
+Major: row-major
+Instructions per pixel: 81.551258
+time (ns): 617179268.000000
+time per pixel (ns): 81.551258
+
+Width: 3672, Height: 2061
+Rotation: 90
+Major: column-major
+Instructions per pixel: 79.363936
+time (ns): 600625636.000000
+time per pixel (ns): 79.363936
+
+Width: 3672, Height: 2061
+Rotation: 90
+Major: block-major
+Instructions per pixel: 72.302240
+time (ns): 547182774.000000
+time per pixel (ns): 72.302240
+
+Width: 3672, Height: 2061
+Rotation: 180
+Major: row-major
+Instructions per pixel: 50.976107
+time (ns): 385786770.000000
+time per pixel (ns): 50.976107
+
+Width: 3672, Height: 2061
+Rotation: 180
+Major: column-major
+Instructions per pixel: 130.167777
+time (ns): 985108695.000000
+time per pixel (ns): 130.167777
+
+Width: 3672, Height: 2061
+Rotation: 180
+Major: block-major
+Instructions per pixel: 69.013596
+time (ns): 522294345.000000
+time per pixel (ns): 69.013596
+
+
++------------+
+| Discussion |
++------------+
+
+The 0 rotation takes the least time of the rotations which makes sense as 
+it does not involve any actual transformation and is instead just the time 
+taken to start and stop the timer. The type of mapping major does not affect
+the the time taken as no mapping occurs in a 0 rotation.
+
+The next fastest result for both images was the 180 rotation with row major.
+This results is due to the UArray2 structure consisting of a 1D array holding
+other 1D arrays which represent the rows. This structure means that reading
+by row major would be the fastest as each element in a row are stored close
+to the other elements in a row. With a 180 degree rotation, the pixels are
+written into the new array into spots that are close together since this new
+array has elements in rows also stored close in memory. 
+
+Both the 90 and 180 rotations for the blocked mapping are the next fastest
+and are took a similar amount as each other. This makes sense because the
+cells in each block are stored together in memory and the cache can easily 
+pull all those elements by getting one block at a time. The times are
+similar to each other as the array of blocks is much smaller than the array
+of cells and thus having to jump between blocks is not very time consuming
+
+When there is a 90 degree rotation whether row or column major is faster
+can differ depending on the dimensions of the image. In the first image,
+which has a greater height than the second, the column major takes longer
+than the row major. However, in the second image which has a smaller
+height, the column major takes very slightly less time time than row major.
+In a 90 degree rotation, the width and height of an image swap, thus when
+writing into the new array, the dimension flip. Thus the mapping major
+used to write in the new array will be the opposite of how you read it in.
+This fact means that reading by either row or column major results in
+both a row and column read/write. Thus when width is relatively larger
+than the height of the original image, column major will do better
+as it wont have to read as many long columns and it will be writing the
+new long rows will be written in row major. An initial row major will have
+the oppopsite issue in this scenario and thus be slower.
+
+The slowest result was a 180 degree rotation by column major for both images.
+This result can be explained as elements in the same column in UArray2 are not
+stored near each other in the cache. Thus accessing elements in different rows
+like you do in column major is a more time consuming operation as different
+blocks of memory have to be put in the cache. This can mean the eviction of 
+some other blocks which also takes time. 
+
+Testing was done with different files using the djpeg command and pnm scale.
+
+djpeg /comp/40/bin/images/from-wind-cave.jpg | pnmscale 3.5 |
+./ppmtrans -rotate 90 | display -
+
+We did this with several different files
+
+
+Time Needed to Complete: 45 hours
